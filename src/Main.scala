@@ -2,7 +2,6 @@ import java.awt.event.InputEvent
 import java.awt.Rectangle
 import java.util.{TimerTask, Timer}
 import processing.core._
-import org.zhang.lib._
 
 
 /**
@@ -12,23 +11,25 @@ import org.zhang.lib._
  * Time: 4:55 PM
  */
 
-class Main extends MyPApplet {
-  import PApplet._;
-  import PConstants._;
+class Main extends PApplet {
+  import PApplet._
+  import PConstants._
 
   val robot = new java.awt.Robot()
-  val screenRect = new Rectangle(103, 125, 480, 800)
+  val screenRect = new Rectangle(2, 25, 480, 800)
   val birdMinX = 122
   val birdMaxX = 178
 
   val BOTTOM_THRESHOLD = 45
   val TOP_THRESHOLD = 80
   val TAP_COOLDOWN = 350
+  
+  val FLOOR = 640
 
 
   lazy val wallColor = color(84, 56, 71)
   lazy val birdOutlineColor = color(83, 56, 70)
-  lazy val tunnelShadowColor = color(85, 128, 34)
+  lazy val pipeShadowColor = color(85, 128, 34)
   lazy val eyeColor = color(250, 250, 250)
 
   var lastTapMillis: Int = 0
@@ -44,33 +45,44 @@ class Main extends MyPApplet {
   }
 
   override def draw() {
-    val screenBuffered = robot.createScreenCapture(screenRect)
-    val pimage = new PImage(screenBuffered)
 
-    // get all the pixels of the tunnel edges
-    val tunnelEdgesUnpruned = (birdMinX until 480).filter(x => pimage.get(x, 0) == wallColor)
+//    val (screenBuffered, time) = org.zhang.lib.time { robot.createScreenCapture(screenRect) }
+    val screenBuffered = robot.createScreenCapture(screenRect)
+//    println("Screen Capture took " + (time / 1e6f) + "ms!")
+    val pimage = new PImage(screenBuffered)
+    pimage.loadPixels()
+
+    // get all the pixels of the pipe edges
+    val pipeEdgesUnpruned = (birdMinX until 480).filter(x => pimage.pixels(FLOOR*width+x) == wallColor)
 
     //we've now got the right edges of each thick outline
-    val tunnelEdges = tunnelEdgesUnpruned.filter(x => tunnelEdgesUnpruned.contains(x + 1) && tunnelEdgesUnpruned.contains(x - 1))
+    val pipeEdges = pipeEdgesUnpruned.filter(x => pipeEdgesUnpruned.contains(x + 1) && pipeEdgesUnpruned.contains(x - 1))
 
     // x must be pruned
-    def getTunnelInfo(x: Int) = {
-      // find the tunnel shadow
-      val tunnelShadow = (0 until 650).find(y => pimage.get(x, y) == tunnelShadowColor)
+    def findPipeOpening(x: Int) = {
+      // find the pipe shadow
+      val pipeShadow = (FLOOR until 0 by -1).find(y => pimage.pixels(y*width+x) == pipeShadowColor)
 
-      val tunnelTop = tunnelShadow.get + 37 // the tunnel top lip is 37 pixels high
-      val tunnelBottom = tunnelTop + 159 // the tunnel is 159 pixels high
 
-      (tunnelTop, tunnelBottom)
+      pipeShadow.map{ shadow =>
+        val pipeBottom = shadow - 37
+        val pipeTop = pipeBottom - 159
+
+//      val pipeTop = pipeShadow.get + 37 // the pipe top lip is 37 pixels high
+//      val pipeBottom = pipeTop + 159 // the pipe is 159 pixels high
+
+        (pipeTop, pipeBottom)
+      }
     }
 
     image(pimage, 0, 0)
 
     stroke(0, 0, 255)
-    tunnelEdges.foreach(x => {
-      val (tunnelTop, tunnelBottom) = getTunnelInfo(x)
-      line(x, 0, x, tunnelTop)
-      line(x, 650, x, tunnelBottom)
+    pipeEdges.foreach(x => {
+      findPipeOpening(x).foreach { case (pipeTop, pipeBottom) => {
+        line(x, 0, x, pipeTop)
+        line(x, FLOOR, x, pipeBottom)
+      }}
     })
 
     val yourYOption = findYourY(pimage)
@@ -94,7 +106,7 @@ class Main extends MyPApplet {
 
       fill(255); stroke(255)
       textAlign(LEFT, TOP)
-      text(velocity, 0, 0)
+      text(frameRate, 0, 0)
     }}
     projected(yourYOption).foreach { case (birdTop, birdBottom) => {
       noFill()
@@ -102,44 +114,53 @@ class Main extends MyPApplet {
       rect(birdMinX, birdTop, birdMaxX, birdBottom)
     }}
 
-    tunnelEdges.headOption.foreach(firstTunnel => {
+    pipeEdges.headOption.foreach(firstPipe => {
       projected(yourYOption).foreach { case (birdTop, birdBottom) => {
-        val (firstTunnelTop, firstTunnelBottom) = getTunnelInfo(firstTunnel)
+        findPipeOpening(firstPipe).foreach { case (firstPipeTop, firstPipeBottom) => {
 
-        if(firstTunnelBottom - birdBottom < BOTTOM_THRESHOLD &&
-           millis() - lastTapMillis > TAP_COOLDOWN) {
-          // jump
-          if(birdTop - firstTunnelTop > TOP_THRESHOLD) {
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK)
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK)
-            lastTapMillis = millis()
-            fill(255, 0, 0)
-            noStroke()
-            ellipse(15, 700, 35, 35)
+          if(firstPipeBottom - birdBottom < BOTTOM_THRESHOLD &&
+             millis() - lastTapMillis > TAP_COOLDOWN) {
+            // jump
+            if(birdTop - firstPipeTop > TOP_THRESHOLD) {
+              robot.mousePress(InputEvent.BUTTON1_DOWN_MASK)
+              robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK)
+              lastTapMillis = millis()
+              fill(255, 0, 0)
+              noStroke()
+              ellipse(15, 700, 35, 35)
+            }
           }
-        }
 
-        stroke(255, 255, 0)
-        line(0, firstTunnelBottom, width, firstTunnelBottom)
-        stroke(255, 128, 0)
-        line(0, firstTunnelBottom - BOTTOM_THRESHOLD, width, firstTunnelBottom - BOTTOM_THRESHOLD)
+          if(millis() - lastTapMillis < TAP_COOLDOWN) {
+            val diff = TAP_COOLDOWN - (millis() - lastTapMillis)
+            noStroke(); fill(255, 255, 0)
+            rectMode(CORNER)
+            rect(0, 660, diff, 15)
+          }
 
-        stroke(0, 255, 129)
-        line(0, firstTunnelTop + TOP_THRESHOLD, width, firstTunnelTop + TOP_THRESHOLD)
+          stroke(255, 255, 0)
+          line(0, firstPipeBottom, width, firstPipeBottom)
+          stroke(255, 128, 0)
+          line(0, firstPipeBottom - BOTTOM_THRESHOLD, width, firstPipeBottom - BOTTOM_THRESHOLD)
+
+          stroke(0, 255, 129)
+          line(0, firstPipeTop + TOP_THRESHOLD, width, firstPipeTop + TOP_THRESHOLD)
+        } }
+
       } }
 
     })
-    if(tunnelEdges.headOption.isDefined) {
-      saveFrame("frames/frames-####.tiff")
-    }
+//    if(pipeEdges.headOption.isDefined) {
+//      saveFrame("frames/frames-####.tiff")
+//    }
 //    println(frameRate)
   }
 
   // scan down the center of your bounding box
   def findYourY(pimage: PImage) = {
-    // the floor is at 650 pixels
-    val birdOutlinePixels = (0 until 650).filter(y =>
-      pimage.get((birdMinX + birdMaxX)/2, y) == birdOutlineColor
+    // the floor is at FLOOR pixels
+    val birdOutlinePixels = (0 until FLOOR).filter(y =>
+      pimage.pixels(y*width+(birdMinX + birdMaxX)/2) == birdOutlineColor
     )
 
 //    val middleY = birdOutlinePixels.sum.toFloat / birdOutlinePixels.length
