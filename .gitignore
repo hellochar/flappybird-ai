@@ -1,4 +1,3 @@
-*.tiff
-.idea/
+*.tiffs
 out/
 docs/
