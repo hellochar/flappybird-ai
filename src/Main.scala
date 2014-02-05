@@ -1,5 +1,5 @@
 import java.awt.event.InputEvent
-import java.awt.Rectangle
+import java.awt.{MouseInfo, Rectangle}
 import java.util.{TimerTask, Timer}
 import processing.core._
 
@@ -23,10 +23,7 @@ class Main extends PApplet {
   def MILLIS_PER_FRAME = 1000 / 30f
 
   //simulate 3 frames of falling down
-  def BOTTOM_THRESHOLD = {
-    val dt = MILLIS_PER_FRAME * 3
-    45 + velocity * dt + GRAVITY / 2 * (dt * dt)
-  }
+  def BOTTOM_THRESHOLD = 12
   val TOP_THRESHOLD = 80
   val TAP_COOLDOWN = 350
 
@@ -111,6 +108,7 @@ class Main extends PApplet {
 
       lastOffset = (curYMid - lastYMid)
       velocity = lastOffset / (currentTime - lastMillis)
+      velocity += GRAVITY * MILLIS_PER_FRAME
 
       lastYMid = curYMid
       lastMillis = currentTime
@@ -133,12 +131,7 @@ class Main extends PApplet {
              millis() - lastTapMillis > TAP_COOLDOWN) {
             // jump
             if(birdTop - firstPipeTop > TOP_THRESHOLD) {
-              robot.mousePress(InputEvent.BUTTON1_DOWN_MASK)
-              robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK)
-              lastTapMillis = millis()
-              fill(255, 0, 0)
-              noStroke()
-              ellipse(15, 700, 35, 35)
+              tap()
             }
           }
 
@@ -167,6 +160,19 @@ class Main extends PApplet {
 //    println(frameRate)
   }
 
+  def tap() {
+    val mousePos = MouseInfo.getPointerInfo().getLocation()
+    if(!screenRect.contains(mousePos)) {
+      return
+    }
+    robot.mousePress(InputEvent.BUTTON1_DOWN_MASK)
+    robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK)
+    lastTapMillis = millis()
+    fill(255, 0, 0)
+    noStroke()
+    ellipse(15, 700, 35, 35)
+  }
+
   // scan down the center of your bounding box
   def findYourY(pimage: PImage) = {
     // the floor is at FLOOR pixels
@@ -181,8 +187,10 @@ class Main extends PApplet {
     }
   }
 
-  def projected(pos: Option[(Int, Int)]) = {
-    pos.map{ case (top, bottom) => (top + lastOffset, bottom + lastOffset) }
+  def projected(pos: Option[(Int, Int)], frames: Int = 1) = {
+    val dt = MILLIS_PER_FRAME * frames
+    val offset = velocity * dt + GRAVITY / 2 * (dt * dt)
+    pos.map{ case (top, bottom) => (top + offset, bottom + offset) }
   }
 
 }
