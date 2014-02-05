@@ -16,21 +16,21 @@ class Main extends PApplet {
   import PConstants._
 
   val robot = new java.awt.Robot()
-  val screenRect = new Rectangle(2, 25, 480, 800)
-  val birdMinX = 122
-  val birdMaxX = 178
+  val screenRect = new Rectangle(2, 25, 240, 320)
+  val birdMinX = 60
+  val birdMaxX = 90
 
-  def MILLIS_PER_FRAME = 1000 / 30f
+  def MILLIS_PER_FRAME = 1000 / 30f // 33.333333
 
   //simulate 3 frames of falling down
   def BOTTOM_THRESHOLD = 12
-  val TOP_THRESHOLD = 80
+  val TOP_THRESHOLD = 50
   val TAP_COOLDOWN = 350
 
-  //pixels per millisecond
-  val GRAVITY = .0152f
+  //pixels per millisecond^2
+  val GRAVITY = .0067f
   
-  val FLOOR = 640
+  val FLOOR = 280
 
 
   lazy val wallColor = color(84, 56, 71)
@@ -48,8 +48,8 @@ class Main extends PApplet {
   var lastOffset: Float = 0f
 
   override def setup() {
-    size(480, 800, JAVA2D)
-    frameRate(60)
+    size(screenRect.width, screenRect.height, JAVA2D)
+    frameRate(30)
   }
 
   override def draw() {
@@ -61,10 +61,11 @@ class Main extends PApplet {
     pimage.loadPixels()
 
     // get all the pixels of the pipe edges
-    val pipeEdgesUnpruned = (birdMinX until 480).filter(x => pimage.pixels(FLOOR*width+x) == wallColor)
+    val pipeEdgesUnpruned = (birdMinX until width).filter(x => pimage.pixels(FLOOR*width+x) == wallColor)
 
     //we've now got the right edges of each thick outline
-    val pipeEdges = pipeEdgesUnpruned.filter(x => pipeEdgesUnpruned.contains(x + 1) && pipeEdgesUnpruned.contains(x - 1))
+//    val pipeEdges = pipeEdgesUnpruned.filter(x => pipeEdgesUnpruned.contains(x + 1) && pipeEdgesUnpruned.contains(x - 1))
+    val pipeEdges = pipeEdgesUnpruned
 
     // x must be pruned
     def findPipeOpening(x: Int) = {
@@ -73,8 +74,8 @@ class Main extends PApplet {
 
 
       pipeShadow.map{ shadow =>
-        val pipeBottom = shadow - 37
-        val pipeTop = pipeBottom - 159
+        val pipeBottom = shadow - 20
+        val pipeTop = pipeBottom - 80
 
 //      val pipeTop = pipeShadow.get + 37 // the pipe top lip is 37 pixels high
 //      val pipeBottom = pipeTop + 159 // the pipe is 159 pixels high
@@ -108,7 +109,7 @@ class Main extends PApplet {
 
       lastOffset = (curYMid - lastYMid)
       velocity = lastOffset / (currentTime - lastMillis)
-      velocity += GRAVITY * MILLIS_PER_FRAME
+//      velocity += GRAVITY * MILLIS_PER_FRAME
 
       lastYMid = curYMid
       lastMillis = currentTime
@@ -136,10 +137,10 @@ class Main extends PApplet {
           }
 
           if(millis() - lastTapMillis < TAP_COOLDOWN) {
-            val diff = TAP_COOLDOWN - (millis() - lastTapMillis)
+            val diff = (TAP_COOLDOWN - (millis() - lastTapMillis)) / 2
             noStroke(); fill(255, 255, 0)
             rectMode(CORNER)
-            rect(0, 660, diff, 15)
+            rect(0, 285, diff, 15)
           }
 
           stroke(255, 255, 0)
@@ -170,7 +171,7 @@ class Main extends PApplet {
     lastTapMillis = millis()
     fill(255, 0, 0)
     noStroke()
-    ellipse(15, 700, 35, 35)
+    ellipse(15, 300, 15, 15)
   }
 
   // scan down the center of your bounding box
@@ -187,9 +188,16 @@ class Main extends PApplet {
     }
   }
 
-  def projected(pos: Option[(Int, Int)], frames: Int = 1) = {
-    val dt = MILLIS_PER_FRAME * frames
-    val offset = velocity * dt + GRAVITY / 2 * (dt * dt)
+  def projected(pos: Option[(Int, Int)], frames: Int = 2) = {
+    var offset = 0f
+    var vel = velocity
+    val dt = MILLIS_PER_FRAME
+    for(i <- 0 until frames) {
+      vel += GRAVITY * dt
+      offset += velocity * dt
+//      val dt = MILLIS_PER_FRAME * frames
+//      val offset = velocity * dt + GRAVITY / 2 * (dt * dt)
+    }
     pos.map{ case (top, bottom) => (top + offset, bottom + offset) }
   }
 
