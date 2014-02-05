@@ -22,8 +22,7 @@ class Main extends PApplet {
 
   def MILLIS_PER_FRAME = 1000 / 30f // 33.333333
 
-  //simulate 3 frames of falling down
-  def BOTTOM_THRESHOLD = 12
+  val BOTTOM_THRESHOLD = 15
   val TOP_THRESHOLD = 50
   val TAP_COOLDOWN = 350
 
@@ -188,7 +187,7 @@ class Main extends PApplet {
     }
   }
 
-  def projected(pos: Option[(Int, Int)], frames: Int = 2) = {
+  def projected(pos: Option[(Int, Int)], frames: Int = 3) = {
     var offset = 0f
     var vel = velocity
     val dt = MILLIS_PER_FRAME
