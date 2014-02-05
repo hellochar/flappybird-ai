@@ -20,9 +20,18 @@ class Main extends PApplet {
   val birdMinX = 122
   val birdMaxX = 178
 
-  val BOTTOM_THRESHOLD = 45
+  def MILLIS_PER_FRAME = 1000 / 30f
+
+  //simulate 3 frames of falling down
+  def BOTTOM_THRESHOLD = {
+    val dt = MILLIS_PER_FRAME * 3
+    45 + velocity * dt + GRAVITY / 2 * (dt * dt)
+  }
   val TOP_THRESHOLD = 80
   val TAP_COOLDOWN = 350
+
+  //pixels per millisecond
+  val GRAVITY = .0152f
   
   val FLOOR = 640
 
@@ -34,6 +43,8 @@ class Main extends PApplet {
 
   var lastTapMillis: Int = 0
   var lastYMid = 0.0f
+
+  //pixels per millisecond
   var velocity = 0.0f
   var lastMillis = 0
 
@@ -163,8 +174,6 @@ class Main extends PApplet {
       pimage.pixels(y*width+(birdMinX + birdMaxX)/2) == birdOutlineColor
     )
 
-//    val middleY = birdOutlinePixels.sum.toFloat / birdOutlinePixels.length
-//    (middleY - 23, middleY + 23)
     if(birdOutlinePixels.isEmpty) {
       None
     } else {
