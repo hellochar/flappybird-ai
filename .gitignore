@@ -1,3 +1,5 @@
 *.tiffs
 out/
 docs/dumb-ai-frames/
+.idea/
+.iml
