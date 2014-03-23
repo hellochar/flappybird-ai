@@ -27,9 +27,15 @@ You need the following installed:
 1. Unzip the ADT (directory should be named ```adt-bundle-<whatever>/```) and run the SDK Manager
 2. Go to Android 4.0.3 (API15) and install the ```SDK Platform``` and ```Intel x86 Atom System Image```
 2. After that installs, in the menu bar go to Tools -> Manage AVDs
-3. Click New... and fill in the following values: <image here>
+3. Click New... and fill in the following values
+    1. Device - make sure it's a 240x320
+    3. CPU/ABI - Intel Atom (x86)
+    3. RAM at least 512, VM Heap 16
+    4. Internal Storage ~200MB
+    5. SD Card 64 MB
+    6. Check "Use Host GPU"
 4. Press OK to save AVD definition
-5. Press Start, and then press Launch. If all goes well the emulator should load: <image of emulator>
+5. Press Start, and then press Launch. If all goes well the emulator should load
 6. Put flappy bird on the emulator
     1. Download the flappybird apk [(dropbox link here)]( https://www.dropbox.com/s/1u0a8d1ug5yjvap/com.dotgears.flappybird.apk ) and place it into ```adt-bundle-<whatever>/sdk/platform-tools/```
     2. Start a terminal, navigate to ```adt-bundle-<whatever>/sdk/platform-tools/```
@@ -53,7 +59,10 @@ Congrats, you've now got flappy bird on your emulator!
 > There's a bit of delay between when Robot.mousedown() is called and when flappy bird actually registers a click (empirically this was about 3 frames on my machine so that's what it is in the code).
 
 #### * What's the basic AI strategy? 
-> Look at the next pipe you have to fly over. If you're too close to the bottom lip, fly up. There's a bottom threshold to be a bit more safe since the relationship between taking action in your current frame and seeing that action reflected in the actual game is nondeterministic, since it's two different processes - you have to take into account things like GC in both Java and the emulator, load on your computer which may make either program stutter, and the base difference in framerate between the two programs.
+> Look at the next pipe you have to fly over. If you're too close to the bottom lip, fly up.
+
+#### * Why is there so much variance in how well it does?
+> The relationship between taking action in your current frame and seeing that action reflected in the actual game is nondeterministic, since it's two different processes - you have to take into account things like GC in both Java and the emulator, load on your computer, etc. On top of that there are certain game states that the AI has trouble with (e.g. when you've just come from a very high pipe and must fall precisely to a much lower pipe), so depending on luck you'll get much better/worse scores.
 
 #### * This is a disgusting abhorrence of good coding practice and you should go die in a fire
 > Yeah pretty much
