@@ -3,7 +3,9 @@ flappybird-ai
 
 This is a simple AI program that plays flappy bird for you. It currently gets around 10-20 points, although sometimes gets much better scores (40-100s).
 
-<flappy bird ai gif>
+![](https://raw.githubusercontent.com/hellochar/flappybird-ai/master/docs/yep.png "")
+
+![](https://raw.githubusercontent.com/hellochar/flappybird-ai/master/docs/dumb-ai-frames/dumb-ai.gif)
 
 ##How does it work? 
 It constantly takes screenshots of flappy bird running on an emulator on your computer, does extremely primitive object detection to build a model of the game, and then uses that model of the game to decide whether to "tap" the emulator screen or not (tells the OS to do a left-click, which translates to a tap on the emulator).
